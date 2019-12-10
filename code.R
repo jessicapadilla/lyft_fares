@@ -1,5 +1,7 @@
 ## load libraries
 library(tidyverse)
+library(rpart)
+library(rpart.plot)
 
 ## assign the link for the lyft zip folder
 lyft_url <- "https://github.com/jessicapadilla/uber_and_lyft/blob/master/lyft.csv.zip?raw=true"
@@ -70,55 +72,65 @@ rideshare <- rideshare %>% select(-c(id, visibility.1)) %>%
 ## remove rows that do not have prices listed
 rideshare <- na.omit(rideshare, cols = price)
 
+## list the names of all the columns
 names(rideshare)
 
-rideshare %>% 
-  ggplot(aes(weather_summary, price)) +
-  geom_bar(stat = "identity")
+## check the distribution of the prices
+summary(rideshare$price)
 
-Black, Black SUV, UberPool, UberX, UberXL, WAV
+## create a histogram for the distribution of prices
+rideshare %>% ggplot(aes(price)) + 
+  geom_histogram(binwidth = 5, fill = "purple", col = "black") +
+  xlab("Price (Dollars)") + ylab("Count") + 
+  ggtitle("Distribution of Rideshare Prices") +
+  theme_bw()
 
-unique(rideshare$weather_summary)
+## check the correlation between price and several features
+cor(rideshare[c("hour", "day", "month", 
+                "distance", "temperature", "apparent_temperature",
+                "precip_intensity", "precip_probability", 
+                "humidity", "wind_speed", "visibility",
+                "price")])
 
-## check price ranges between companies and their different services
-## for uber
-unique(rideshare$car_type)
+## check the correlation between distance and price
+cor(rideshare[c("distance", "price")])
 
+## create a graph showing the relationship between distance and price
+rideshare %>% ggplot(aes(distance, price, col = company)) +
+  geom_point()
+
+## create a graph showing the relationship between distance and price for uber
 rideshare %>% filter(company == "Uber") %>%
-  ggplot(aes(car_type, price)) + geom_jitter()
-## UberPool is the least and Black SUV is the most
+  ggplot(aes(distance, price, col = car_type)) +
+  geom_point()
 
-## for lyft
+## create a graph showing the relationship between distance and price for lyft
 rideshare %>% filter(company == "Lyft") %>%
-  ggplot(aes(car_type, price)) + geom_jitter()
-## Shared is least and Lux Black XL is most
+  ggplot(aes(distance, price, col = car_type)) +
+  geom_point()
+
+## set the seed
+set.seed(123, sample.kind = "Rounding")
+
+## there are 637976 observations
+## split the data into training and testing sets
+## set 90% of the data for the training set (574178 observations)
+## set the remaining 10% of the data for the test set (63798 observations)
+## randomize the data by first creating a vector of random integers
+train_sample <- sample(637976, 574178)
+
+## use the vector of random integers to randomly select observations from the data
+## create the training set
+rideshare_train <- rideshare[train_sample, ]
+
+## create the test set
+rideshare_test <- rideshare[-train_sample, ]
+
+## create a regression tree model using the training set
+rideshare_model <- rpart(price ~ temperature + precip_intensity + distance, data = rideshare)
+
+rideshare_model
+rpart.plot(rideshare_model, digits = 3)
 
 
-
-## check price for hours, days, and months
-## for uber
-rideshare %>% filter(company == "Uber") %>%
-  ggplot(aes(hour, price, col = car_type)) + geom_jitter()
-
-ggplot(aes(fertility, life_expectancy, col = continent)) + geom_point() + facet_grid(. ~ year)
-
-
-
-
-## create bar plots for destination
-## create bar plots for source
-## create bar plots for weather summary
-## check how distance affects price
-## check how temperature affects surge multiplier, price
-## check how precipitation affects surge multiplier, price
-## check how humidity affects surge multiplier, price
-## check how wind speed affects surge multiplier, price
-## check how visibility affects surge multiplier, price
-## check how wind_bearing affects surge multiplier, price
-## check how cloud_cover affects surge multiplier, price
-## check how weekday affects surge multiplier, price
-## compare prices between companies
-## correlation
-## regression
-## check decision trees
-
+rideshare <- rideshare %>% filter(company == "Uber" & car_type == "UberX")
