@@ -1,7 +1,138 @@
 ## load libraries
 library(tidyverse)
-library(ggplot2)
-library(gmodels)
+library(psych)
+
+## assign the link for the lyft zip folder
+lyft_url <- "https://github.com/jessicapadilla/uber_and_lyft/blob/master/lyft.csv.zip?raw=true"
+
+## create a temporary file so the data can be downloaded into it
+lyft_temp <- tempfile()
+
+## download the zip folder containing the data
+download.file(lyft_url, lyft_temp, mode = "wb")
+
+## unzip the zip folder
+unzip(lyft_temp, "lyft.csv")
+
+## read the csv file within the zip folder
+lyft <- read.csv("lyft.csv", sep = ",", header = TRUE)
+
+## check the structure of the data
+str(lyft)
+
+## check if the visibility and visibility.1 columns are the same
+identical(lyft$visibility, lyft$visibility.1)
+
+## convert the data into a tibble
+## remove unnecessary columns
+## rename the remaining columns
+lyft <- as_tibble(lyft) %>% select(-c(id, visibility.1)) %>%
+  rename(company = cab_type,
+         car_type = name,
+         apparent_temperature = apparentTemperature,
+         weather_summary = short_summary,
+         precip_intensity = precipIntensity,
+         precip_probability = precipProbability,
+         wind_speed = windSpeed,
+         temp_high = temperatureHigh,
+         temp_low = temperatureLow,
+         dew_point = dewPoint,
+         wind_bearing = windBearing,
+         cloud_cover = cloudCover,
+         uv_index = uvIndex,
+         moonphase = moonPhase)
+
+## convert the integer columns to numeric
+lyft[, c(1:3, 22, 24)] <- sapply(lyft[, c(1:3, 22, 24)], as.numeric)
+
+## filter the data to only include the main lyft services
+lyft <- lyft %>% filter(car_type == "Lyft")
+
+## check the distribution of prices
+summary(lyft$price)
+
+## create a scatterplot matrix
+## show how the price correlates to certain variables
+pairs.panels(lyft[c("price", "hour", "day", "month")], 
+             density = FALSE, ellipses = FALSE)
+             
+             
+             
+             "distance", "temperature", "precip_intensity")])
+
+
+
+
+
+
+
+
+## check the correlation between price and all the other variables
+cor(lyft[c("price", "hour", "day", "month", 
+           "distance", "temperature", "apparent_temperature", 
+           "precip_intensity", "precip_probability",
+           "humidity", "wind_speed", "visibility", "temp_high", "temp_low",
+           "dew_point", "wind_bearing", "cloud_cover", "uv_index", 
+           "moonphase")])
+
+unique(lyft$car_type)
+
+lyft_shared <- lyft %>% filter(car_type == "Shared")
+
+unique(lyft_shared$surge_multiplier)
+
+cor(lyft_shared[c("price", "hour", "day", "month", 
+           "distance", "temperature", "apparent_temperature", 
+           "precip_intensity", "precip_probability",
+           "humidity", "wind_speed", "visibility", "temp_high", "temp_low",
+           "dew_point", "wind_bearing", "cloud_cover", "uv_index", 
+           "moonphase")])
+
+unique(lyft$car_type)
+
+lyft_lux <- lyft %>% filter(car_type == "Lux")
+
+unique(lyft_lux$surge_multiplier)
+
+cor(lyft_lux[c("price", "hour", "day", "month", 
+                  "distance", "surge_multiplier", "temperature", "apparent_temperature", 
+                  "precip_intensity", "precip_probability",
+                  "humidity", "wind_speed", "visibility", "temp_high", "temp_low",
+                  "dew_point", "wind_bearing", "cloud_cover", "uv_index", 
+                  "moonphase")])
+
+unique(lyft$car_type)
+
+lyft_lyft <- lyft %>% filter(car_type == "Lyft")
+
+unique(lyft_lyft$surge_multiplier)
+
+cor(lyft_lyft[c("price", "hour", "day", "month", 
+               "distance", "surge_multiplier", "temperature", "apparent_temperature", 
+               "precip_intensity", "precip_probability",
+               "humidity", "wind_speed", "visibility", "temp_high", "temp_low",
+               "dew_point", "wind_bearing", "cloud_cover", "uv_index", 
+               "moonphase")])
+
+unique(lyft$car_type)
+
+lyft_xl <- lyft %>% filter(car_type == "Lyft XL")
+
+unique(lyft_xl$surge_multiplier)
+
+cor(lyft_xl[c("price", "hour", "day", "month", 
+                "distance", "surge_multiplier", "temperature", "apparent_temperature", 
+                "precip_intensity", "precip_probability",
+                "humidity", "wind_speed", "visibility", "temp_high", "temp_low",
+                "dew_point", "wind_bearing", "cloud_cover", "uv_index", 
+                "moonphase")])
+
+test <- lyft %>% filter(car_type == "Lyft") %>% group_by(weekday) %>% tally()
+  
+  
+
+
+
 
 ## assign the link for the uber zip folder
 uber_url <- "https://github.com/jessicapadilla/uber_and_lyft/blob/master/uber.csv.zip?raw=true"
