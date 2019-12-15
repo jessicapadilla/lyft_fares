@@ -9,23 +9,128 @@ output: pdf_document
 
 Lyft is one of the many rideshare services available to people today.  Founded in 2012, Lyft allows users to order rides through the use of a phone app.  There are 6 types of rides available: Shared Ride, Lyft, Lyft XL, Lux, Lux Black, and Lux Black XL (Lyft).  This project will focus on the the basic Lyft service, which is the most commonly used ride.  
 
-Fares are generally determined by the distance for each ride.  However, Lyft and other rideshare companies have adopted the practice of what is called price surging.  This involves increasing the price of a ride because the demand for Lyft cars exceed the number of Lyft cars that are actually in service (Lyft).  This can result from many conditions such as extreme temperatures, bad weather, and busy commute hours within the day.
-
-In this project, we utilize a data set of Lyft rides to see what factors cause such price surges.  We will, then, use the determined factors to forecast the price of any Lyft ride.
-
+Fares are generally determined by the distance for each ride.  However, Lyft and other rideshare companies have adopted the practice of what is called price surging.  This involves increasing the price of a ride because the demand for Lyft cars exceeds the number of Lyft cars that are actually in service (Lyft).  This can result from many conditions such as extreme temperatures, bad weather, and busy commute hours within the day.  In this project, we will utilize a data set of Lyft rides within Boston, MA to see what factors cause such price surges.  We will, then, use the determined factors to forecast the price of any Lyft ride.
 &nbsp;
 
 ## Methods
 
-The Lyft data set was retrieved from Kaggle in the form of zip files (https://www.kaggle.com/sliu65/data-mining-project-boston).  
-
-All of the data was, then, imported and downloaded into R.  The tidyverse package was used for data cleaning, regression analysis, and visuzalition. The psych package was also used to create scatterplot matrices to assess correlation between variables.
+Lyft data for the city of Boston was retrieved from Kaggle (https://www.kaggle.com/sliu65/data-mining-project-boston) and uploaded onto GitHub (https://github.com/jessicapadilla/uber_and_lyft/blob/master/lyft.csv.zip?raw=true).   All of the data was, then, imported and downloaded into R.  The tidyverse package was used for data cleaning, regression analysis, and visuzalition. The psych package was also used to create scatterplot matrices to assess correlation between variables.
 
 The R code for this project can be found within the Supplementary Materials section of this paper and on GitHub (https://github.com/jessicapadilla/mta_finances/blob/master/code.R).
-
 &nbsp;
 
 ## Results
 
+Lyft fare price surging is affected by what is termed the surge multiplier.  If the surge multiplier is equal to 1, then it means that there are enough Lyft cars in the area to meet user demand and, therefore, the fare remains unchanged.  If the surge multiplier is greater than 1, then there are more users than Lyft cars in service.  As a result, the standard fare is increased by the surge multiplier.
 
+```{r, data, echo = FALSE, message = FALSE, warning = FALSE, results = 'hide', fig.height = 2.8}
+
+## load libraries
+library(tidyverse)
+library(psych)
+
+## assign the link for the lyft zip folder
+lyft_url <- "https://github.com/jessicapadilla/uber_and_lyft/blob/master/lyft.csv.zip?raw=true"
+
+## create a temporary file so the data can be downloaded into it
+lyft_temp <- tempfile()
+
+## download the zip folder containing the data
+download.file(lyft_url, lyft_temp, mode = "wb")
+
+## unzip the zip folder
+unzip(lyft_temp, "lyft.csv")
+
+## read the csv file within the zip folder
+lyft <- read.csv("lyft.csv", sep = ",", header = TRUE)
+
+## check the structure of the data
+str(lyft)
+
+## check if the visibility and visibility.1 columns are the same
+identical(lyft$visibility, lyft$visibility.1)
+
+## convert the data into a tibble
+## remove unnecessary columns
+## rename the remaining columns
+lyft <- as_tibble(lyft) %>% select(-c(id, visibility.1)) %>%
+  rename(company = cab_type,
+         car_type = name,
+         apparent_temperature = apparentTemperature,
+         weather_summary = short_summary,
+         precip_intensity = precipIntensity,
+         precip_probability = precipProbability,
+         wind_speed = windSpeed,
+         temp_high = temperatureHigh,
+         temp_low = temperatureLow,
+         dew_point = dewPoint,
+         wind_bearing = windBearing,
+         cloud_cover = cloudCover,
+         uv_index = uvIndex,
+         moonphase = moonPhase)
+
+## convert the integer columns to numeric
+lyft[, c(1:3, 22, 24)] <- sapply(lyft[, c(1:3, 22, 24)], as.numeric)
+
+## filter the data to only include the basic lyft services
+lyft <- lyft %>% filter(car_type == "Lyft")
+
+## condense the categories in the weather summary column
+lyft <- lyft %>% mutate(weather_summary = case_when(
+  weather_summary == " Clear " ~ "Clear",
+  weather_summary %in% c(" Overcast ", " Mostly Cloudy ", " Partly Cloudy ", " Possible Drizzle ") ~ "Cloudy",
+  weather_summary %in% c(" Light Rain ", " Rain ", " Drizzle ") ~ "Rainy",
+  weather_summary == " Foggy " ~ "Foggy"))
+
+## reorder the types of weather conditions
+lyft$weather_summary <- factor(lyft$weather_summary,
+                                         levels = c("Cloudy", "Clear", "Rainy", "Foggy"))
+
+## create a graph to show how frequent price surging occurs
+lyft %>% filter(surge_multiplier > 1) %>%
+  ggplot(aes(surge_multiplier)) + 
+  geom_histogram(binwidth = 0.25, col = "black", fill = "purple") +
+  scale_x_continuous(breaks = seq(1.25, 3.00, 0.25)) +
+  coord_cartesian(ylim = c(0, 2250)) +
+  xlab("Surge Multiplier") + ylab("Count") +
+  ggtitle("Frequency of Price Surging") +
+  theme_bw()
+```
+
+When surge multipliers are plotted against each Lyft ride's starting location, we see that the amount of surge multipliers is highest in the Boston district of Back Bay, which can be as high as roughly 3.00.  Haymarket Square, on the other hand, has the fewest price surges and never goes above 1.75.
+
+```{r, starting location, echo = FALSE, message = FALSE, warning = FALSE, results = 'hide', fig.height = 3.5}
+
+## create a graph to show how surge multiplier varies by source location
+## exclude surge_multiplier of 1 since it doesn't cause fare to increase
+lyft %>% filter(surge_multiplier > 1) %>%
+  mutate(source = reorder(source, -surge_multiplier)) %>%
+  ggplot(aes(source, surge_multiplier, col = source)) + 
+  geom_jitter(alpha = 0.2, size = 2, width = 0.2) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+  scale_y_continuous(breaks = seq(1.25, 3.00, 0.25)) +
+  xlab("Starting Location") + ylab("Surge Multiplier") +
+  ggtitle("Surge Multiplier Based On Starting Location") +
+  theme_bw() + 
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+&nbsp;
+
+Thw weather can also affect surge multipliers.  The number of rides that are affected by surge pricing are highest when weather conditions are cloudy.  Furthermore, when the weather is either cloudy or rainy, surge multipliers can be up to 3.00.  It is interesting to note that clear weather conditions have nearly the same pattern of surge pricing as rainy conditions, indicating that there are other variables that impact surge multipliers.
+
+```{r, weather, echo = FALSE, message = FALSE, warning = FALSE, results = 'hide', fig.height = 3.5}
+
+## create a graph to show how the surge_multiplier changes with weather
+lyft %>% filter(surge_multiplier > 1) %>% 
+  group_by(surge_multiplier) %>% count(weather_summary) %>%
+  ggplot(aes(surge_multiplier, n, col = purple)) + 
+  geom_bar(stat = "identity", fill = "purple", color = "black") +
+  facet_wrap(. ~ weather_summary) + 
+  scale_x_continuous(breaks = seq(1.25, 3.00, 0.25)) +
+  xlab("Surge Multiplier") + ylab("Count") + 
+  ggtitle("Surge Pricing During Different Weather Conditions") +
+  theme_bw()
+```
 

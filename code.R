@@ -45,11 +45,86 @@ lyft <- as_tibble(lyft) %>% select(-c(id, visibility.1)) %>%
 ## convert the integer columns to numeric
 lyft[, c(1:3, 22, 24)] <- sapply(lyft[, c(1:3, 22, 24)], as.numeric)
 
-## filter the data to only include the main lyft services
+## filter the data to only include the basic lyft services
 lyft <- lyft %>% filter(car_type == "Lyft")
 
-## check the distribution of prices
-summary(lyft$price)
+## condense the categories in the weather summary column
+lyft <- lyft %>% mutate(weather_summary = case_when(
+  weather_summary == " Clear " ~ "Clear",
+  weather_summary %in% c(" Overcast ", " Mostly Cloudy ", " Partly Cloudy ", " Possible Drizzle ") ~ "Cloudy",
+  weather_summary %in% c(" Light Rain ", " Rain ", " Drizzle ") ~ "Rainy",
+  weather_summary == " Foggy " ~ "Foggy"))
+
+## reorder the types of weather conditions
+lyft$weather_summary <- factor(lyft$weather_summary,
+                                         levels = c("Cloudy", "Clear", "Rainy", "Foggy"))
+
+## create a graph to show how frequent price surging occurs
+lyft %>% filter(surge_multiplier > 1) %>%
+  ggplot(aes(surge_multiplier)) + 
+  geom_histogram(binwidth = 0.25, col = "black", fill = "purple") +
+  scale_x_continuous(breaks = seq(1.25, 3.00, 0.25)) +
+  coord_cartesian(ylim = c(0, 2250)) +
+  xlab("Surge Multiplier") + ylab("Count") +
+  ggtitle("Frequency of Price Surging") +
+  theme_bw()
+
+## create a graph to show how surge multiplier varies by source location
+## exclude surge_multiplier of 1 since it doesn't cause fare to increase
+lyft %>% filter(surge_multiplier > 1) %>%
+  mutate(source = reorder(source, -surge_multiplier)) %>%
+  ggplot(aes(source, surge_multiplier, col = source)) + 
+  geom_jitter(alpha = 0.2, size = 2, width = 0.2) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+  scale_y_continuous(breaks = seq(1.25, 3.00, 0.25)) +
+  xlab("Starting Location") + ylab("Surge Multiplier") +
+  ggtitle("Surge Multiplier Based On Starting Location") +
+  theme_bw() + 
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 90, hjust = 1))
+
+## create a graph to show how the surge_multiplier changes with weather
+lyft %>% filter(surge_multiplier > 1) %>% 
+  group_by(surge_multiplier) %>% count(weather_summary) %>%
+  ggplot(aes(surge_multiplier, n, col = purple)) + 
+  geom_bar(stat = "identity", fill = "purple", color = "black") +
+  facet_wrap(. ~ weather_summary) + 
+  scale_x_continuous(breaks = seq(1.25, 3.00, 0.25)) +
+  xlab("Surge Multiplier") + ylab("Count") + 
+  ggtitle("Surge Pricing During Different Weather Conditions") +
+  theme_bw()
+
+
+
+
+
+
+lyft %>% filter(surge_multiplier > 1) %>% 
+  group_by(surge_multiplier, hour) %>%
+  summarize(total = sum(surge_multiplier))
+
+
+
+lyft %>% ggplot(aes(hour, surge_multiplier)) + geom_point()
+
+cor(lyft[c("surge_multiplier", 
+           "hour", "day", "month",
+           "price", "distance",
+           "temperature",
+           "precip_intensity", 
+           "humidity", "wind_speed", "visibility")])
+
+
+
+lyft %>% 
+  ggplot(aes(source, surge_multiplier)) + 
+  geom_jitter(alpha = 0.2) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+names(lyft)
+
+
+
 
 ## create a scatterplot matrix
 ## show how the price correlates to certain variables
