@@ -1,6 +1,7 @@
 ## load libraries
 library(tidyverse)
 library(psych)
+library(ggcorrplot)
 
 ## assign the link for the lyft zip folder
 lyft_url <- "https://github.com/jessicapadilla/uber_and_lyft/blob/master/lyft.csv.zip?raw=true"
@@ -59,7 +60,14 @@ lyft <- lyft %>% mutate(weather_summary = case_when(
 lyft$weather_summary <- factor(lyft$weather_summary,
                                          levels = c("Cloudy", "Clear", "Rainy", "Foggy"))
 
+## reorder the weekdays
+lyft$weekday <- factor(lyft$weekday,
+                               levels = c("Sun", "Mon", "Tue",
+                                          "Wed", "Thu",
+                                          "Fri", "Sat"))
+
 ## create a graph to show how frequent price surging occurs
+## exclude surge_multiplier of 1 since it doesn't cause fare to increase
 lyft %>% filter(surge_multiplier > 1) %>%
   ggplot(aes(surge_multiplier)) + 
   geom_histogram(binwidth = 0.25, col = "black", fill = "purple") +
@@ -84,8 +92,9 @@ lyft %>% filter(surge_multiplier > 1) %>%
         axis.text.x = element_text(angle = 90, hjust = 1))
 
 ## create a graph to show how the surge_multiplier changes with weather
+## exclude surge_multiplier of 1 since it doesn't cause fare to increase
 lyft %>% filter(surge_multiplier > 1) %>% 
-  group_by(surge_multiplier) %>% count(weather_summary) %>%
+  group_by(weather_summary) %>% count(surge_multiplier) %>%
   ggplot(aes(surge_multiplier, n, col = purple)) + 
   geom_bar(stat = "identity", fill = "purple", color = "black") +
   facet_wrap(. ~ weather_summary) + 
@@ -94,15 +103,48 @@ lyft %>% filter(surge_multiplier > 1) %>%
   ggtitle("Surge Pricing During Different Weather Conditions") +
   theme_bw()
 
+## revise the data frame to only include numeric values of interest
+lyft_num <- lyft %>% select(c(source, destination, company, car_type,
+                               weather_summary, weekday))
+
+## round the data to one decimal place
+corr <- round(cor(lyft_num), 1)
+
+## create a correlogram
+ggcorrplot(corr, hc.order = TRUE, 
+           type = "lower", 
+           lab = TRUE, 
+           lab_size = 3, 
+           method = "circle", 
+           colors = c("tomato2", "white", "springgreen3"), 
+           title = "Correlogram Of Lyft Data", 
+           ggtheme = theme_bw)
 
 
+
+lyft %>% 
+  filter(surge_multiplier > 1) %>% 
+  mutate(surge_multiplier = factor(surge_multiplier)) %>%
+  group_by(hour) %>% count(surge_multiplier) %>% 
+  ggplot(aes(hour, n, col = surge_multiplier)) + geom_line() +
+  geom_point()
+  
 
 
 
 lyft %>% filter(surge_multiplier > 1) %>% 
-  group_by(surge_multiplier, hour) %>%
-  summarize(total = sum(surge_multiplier))
+  group_by(weekday) %>% count(surge_multiplier)
 
+
+lyft %>% filter(surge_multiplier > 1) %>% 
+  group_by(hour) %>% 
+  summarize(avg_surge = mean(surge_multiplier)) %>%
+  ggplot(aes(hour, avg_surge)) + geom_point()
+
+lyft %>% filter(surge_multiplier > 1) %>% 
+  group_by(weekday) %>% 
+  summarize(avg_surge = mean(surge_multiplier)) %>%
+  ggplot(aes(weekday, avg_surge)) + geom_point()
 
 
 lyft %>% ggplot(aes(hour, surge_multiplier)) + geom_point()
