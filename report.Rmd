@@ -28,6 +28,7 @@ Lyft fare price surging is affected by what is termed the surge multiplier.  If 
 ## load libraries
 library(tidyverse)
 library(psych)
+library(ggcorrplot)
 
 ## assign the link for the lyft zip folder
 lyft_url <- "https://github.com/jessicapadilla/uber_and_lyft/blob/master/lyft.csv.zip?raw=true"
@@ -133,4 +134,45 @@ lyft %>% filter(surge_multiplier > 1) %>%
   ggtitle("Surge Pricing During Different Weather Conditions") +
   theme_bw()
 ```
+
+We, then, created a correlogram for the surge multiplier and other numeric variables of interest in the dataset.  This allowed us to visualize any possible correlations between the variables through the use of color and a numeric scale.  
+
+If variables are positively correlated, then the intersecting box in the graph would be a shade of red.  If the variables are negatively correlated, then the intersecting box in the graph would be shade of purple.  The darkness of the color represents the strength of the relationship: the darker the color, the stronger the relationship.
+
+If there is a minus sign in front of the correlation coefficient, then there is a negative linear relationship (when one variable increases, the other decreases).  If there is no sign, then there is a positive relationship (when one variable increases, the other increases).  
+
+The strength of the correlation coefficient is defined as ("How To Interpret A Correlation Coefficient R"):
+
+* 1.0: A perfect correlation.
+
+* Between 0.7 to 1.0: A strong correlation.
+
+* Between 0.5 to 0.7: A moderate correlation.
+
+* Between 0.3 to 0.5: A weak correlation.
+
+* 0: No correlation.
+
+```{r, correlogram, echo = FALSE, message = FALSE, warning = FALSE, results = 'hide', fig.height = 4.5}
+
+## revise the data frame to only include numeric values of interest
+lyft_num <- lyft %>% select(c(surge_multiplier, hour, day,
+                              price, distance,
+                              temperature, precip_intensity, 
+                              humidity, wind_speed, 
+                              visibility, cloud_cover))
+
+## round the data to one decimal place
+corr <- round(cor(lyft_num), 1)
+
+## create a correlogram
+ggcorrplot(corr, type = "lower",
+           lab = TRUE, lab_size = 3.5,
+           title = "Correlogram Of Variables",
+           ggtheme = theme_bw())
+```
+
+&nbsp;
+
+The correlogram indicates that there is a moderate relationship between the surge multiplier and price, which have a correlation coefficient of 0.5.  There is a strong correlation between price and distance, which have a correlation coefficient of 0.8.  It is also clear that Lyft fares are not affected by the hour in the day, the day within the week, or other conditions.
 
