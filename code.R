@@ -2,6 +2,7 @@
 library(tidyverse)
 library(psych)
 library(ggcorrplot)
+library(knitr)
 
 ## assign the link for the lyft zip folder
 lyft_url <- "https://github.com/jessicapadilla/uber_and_lyft/blob/master/lyft.csv.zip?raw=true"
@@ -136,13 +137,23 @@ lyft_train <- lyft[train_sample, ]
 ## create the test set
 lyft_test <- lyft[-train_sample, ]
 
+## create a linear regression model using the training set
+lyft_model <- lm(price ~ surge_multiplier + distance + 
+                   source + weather_summary, data = lyft_train)
 
-lyft_model <- lm(price ~ surge_multiplier + distance + source + weather_summary, data = lyft_train)
+## check the summary to evaluate the model's performance
 summary(lyft_model)
 
+## use the linear regression model on the test set
 lyft_pred <- predict(lyft_model, lyft_test)
 
-actuals_preds <- data.frame(cbind(actuals=lyft_test$price, predicteds=lyft_pred))
-correlation_accuracy <- cor(actuals_preds)
+## create a data frame to compare the predicted actual values
+actual_predicted <- data.frame(cbind("Actual" = lyft_test$price, "Predicted" = lyft_pred))
+
+## check the correlation accuracy between the predicted and the actual values
+correlation_accuracy <- cor(actual_predicted)
 correlation_accuracy
-head(actuals_preds)
+
+## check the first few rows of the predicted and actual values
+kable(head(actual_predicted), 
+      caption = "Comparing the Actual Prices to the Predicted Prices", digits = 1)
