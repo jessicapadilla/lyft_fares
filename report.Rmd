@@ -1,5 +1,5 @@
 ---
-title: "Forecasting Lyft Fares Using Regression"
+title: "Forecasting Lyft Fares Using Linear Regression"
 author: "Jessica Padilla"
 date: "December 13, 2019"
 output: pdf_document
@@ -9,30 +9,29 @@ output: pdf_document
 
 Lyft is one of the many rideshare services available to people today.  Founded in 2012, Lyft allows users to order rides through the use of a phone app.  There are 6 types of rides available: Shared Ride, Lyft, Lyft XL, Lux, Lux Black, and Lux Black XL (Lyft).  This project will focus on the the basic Lyft service, which is the most commonly used ride.  
 
-Fares are generally determined by the distance for each ride.  However, Lyft and other rideshare companies have adopted the practice of what is called price surging.  This involves increasing the price of a ride because the demand for Lyft cars exceeds the number of Lyft cars that are actually in service (Lyft).  This can result from many conditions such as extreme temperatures, bad weather, and busy commute hours within the day.  In this project, we will utilize a data set of Lyft rides within Boston, MA to see what factors cause such price surges.  We will, then, use the determined factors to forecast the price of any Lyft ride.
+Fares are generally determined by the distance for each ride.  However, Lyft and other rideshare companies have adopted the practice of what is called price surging.  This involves increasing the price of a ride because the demand for Lyft cars exceeds the number of Lyft cars that are actually in service (Lyft).  This can result from many conditions such as densely populated locations, bad weather, and busy commute hours within the day.  In this project, we will utilize a data set of Lyft rides within Boston, Massachusetts to see what factors contribute to price surges.  We will, then, use the determined factors to forecast the price of any Lyft ride.
 &nbsp;
 
 ## Methods
 
-Lyft data for the city of Boston was retrieved from Kaggle (https://www.kaggle.com/sliu65/data-mining-project-boston) and uploaded onto GitHub (https://github.com/jessicapadilla/uber_and_lyft/blob/master/lyft.csv.zip?raw=true).   All of the data was, then, imported and downloaded into R.  The tidyverse package was used for data cleaning, regression analysis, and visuzalition. The psych package was also used to create scatterplot matrices to assess correlation between variables.
+Lyft data was retrieved from Kaggle (https://www.kaggle.com/sliu65/data-mining-project-boston) and uploaded onto GitHub (https://github.com/jessicapadilla/lyft_fares/blob/master/lyft.csv.zip?raw=true).   All of the data was imported into R.  The tidyverse package was used for data cleaning, analysis, and visualization. The ggcorrplot and knitr packages was also used to enhance visualization.
 
-The R code for this project can be found within the Supplementary Materials section of this paper and on GitHub (https://github.com/jessicapadilla/mta_finances/blob/master/code.R).
+The R code for this project can be found within the Supplementary Materials section of this paper and on GitHub (https://github.com/jessicapadilla/lyft_fares/blob/master/code.R).
 &nbsp;
 
 ## Results
 
-Lyft fare price surging is affected by what is termed the surge multiplier.  If the surge multiplier is equal to 1, then it means that there are enough Lyft cars in the area to meet user demand and, therefore, the fare remains unchanged.  If the surge multiplier is greater than 1, then there are more users than Lyft cars in service.  As a result, the standard fare is increased by the surge multiplier.
+Lyft fare price surging is affected by what is termed the surge multiplier.  If the surge multiplier is equal to 1, then it means that there are enough Lyft cars in the area to meet user demand and, therefore, the fare remains unchanged.  If the surge multiplier is greater than 1, then there are more users than Lyft cars in service.  As a result, the standard fare is increased by the surge multiplier.  For this particular dataset, which focuses on the city of Boston, the most frequent surge multiplier is 1.25.
 
 ```{r, data, echo = FALSE, message = FALSE, warning = FALSE, results = 'hide', fig.height = 2.8}
 
 ## load libraries
 library(tidyverse)
-library(psych)
 library(ggcorrplot)
 library(knitr)
 
 ## assign the link for the lyft zip folder
-lyft_url <- "https://github.com/jessicapadilla/uber_and_lyft/blob/master/lyft.csv.zip?raw=true"
+lyft_url <- "https://github.com/jessicapadilla/lyft_fares/blob/master/lyft.csv.zip?raw=true"
 
 ## create a temporary file so the data can be downloaded into it
 lyft_temp <- tempfile()
@@ -120,11 +119,11 @@ lyft %>% filter(surge_multiplier > 1) %>%
 
 &nbsp;
 
-Thw weather can also affect surge multipliers.  The number of rides that are affected by surge pricing are highest when weather conditions are cloudy.  Furthermore, when the weather is either cloudy or rainy, surge multipliers can be up to 3.00.  It is interesting to note that clear weather conditions have nearly the same pattern of surge pricing as rainy conditions, indicating that there are other variables that impact surge multipliers.
+Thw weather can also affect surge multipliers.  The number of rides that are affected by surge pricing are highest when weather conditions are cloudy.  Furthermore, when the weather is either cloudy or rainy, surge multipliers can reach up to 3.00.  It is interesting to note that clear weather conditions have nearly the same pattern of surge pricing as rainy conditions, indicating that there are other variables that impact surge multipliers.
 
 ```{r, weather, echo = FALSE, message = FALSE, warning = FALSE, results = 'hide', fig.height = 3.5}
 
-## create a graph to show how the surge_multiplier changes with weather
+## create a graph to show how the surge multiplier changes with weather
 lyft %>% filter(surge_multiplier > 1) %>% 
   group_by(surge_multiplier) %>% count(weather_summary) %>%
   ggplot(aes(surge_multiplier, n, col = purple)) + 
@@ -137,12 +136,11 @@ lyft %>% filter(surge_multiplier > 1) %>%
 ```
 
 We, then, created a correlogram for the surge multiplier and other numeric variables of interest in the dataset.  This allowed us to visualize any possible correlations between the variables through the use of color and a numeric scale.  
+If variables are positively correlated, then the intersecting box between variables in the graph would be a shade of red.  If the variables are negatively correlated, then the intersecting box in the graph would be shade of purple.  The darkness of the color represents the strength of the relationship: the darker the color, the stronger the relationship.
 
-If variables are positively correlated, then the intersecting box in the graph would be a shade of red.  If the variables are negatively correlated, then the intersecting box in the graph would be shade of purple.  The darkness of the color represents the strength of the relationship: the darker the color, the stronger the relationship.
+If there is a minus sign in front of the correlation coefficient, then there is a negative linear relationship (when one variable increases, the other decreases).  If there is no sign, then there is a positive linear relationship (when one variable increases, the other increases).  
 
-If there is a minus sign in front of the correlation coefficient, then there is a negative linear relationship (when one variable increases, the other decreases).  If there is no sign, then there is a positive relationship (when one variable increases, the other increases).  
-
-The strength of the correlation coefficient is defined as ("How To Interpret A Correlation Coefficient R"):
+The strength of the correlation coefficient is numerically defined as follows ("How To Interpret A Correlation Coefficient R"):
 
 * 1.0: A perfect correlation.
 
@@ -175,9 +173,9 @@ ggcorrplot(corr, type = "lower",
 
 &nbsp;
 
-The correlogram indicates that there is a moderate relationship between the surge multiplier and price, which have a correlation coefficient of 0.5.  There is a strong correlation between price and distance, which have a correlation coefficient of 0.8.  It is also clear that Lyft fares are not affected by the hour in the day, the day within the week, or other conditions.
+The correlogram indicates that there is a moderate relationship between the surge multiplier and price, which have a correlation coefficient of 0.5.  There is a strong correlation between price and distance, which have a correlation coefficient of 0.8.  It is also clear that Lyft fares are not affected by the hour in the day, the day within the week, or other specific weather variables.
 
-We built a linear regression model (see Supplementary Materials section for code) by splitting the data set into a training set (90% of the data) and a test set (10% of the data).  The price of the Lyft ride was forecasted by using the surge multiplier, distance, source, and weather summary.  This model generated a multiple R-squared value of 0.845, which means it explains 84.5% of the variation in Lyft prices.  In addition, the correlation accuracy of this model is 0.92, which means that the predicted prices of Lyft rides are very similar to the actual prices since its value is close to 1.  This can be seen by examining the first few lines of data generated by this model in the table below.  
+We built a linear regression model (see Supplementary Materials section for code) by splitting the data set into a training set (90% of the data) and a test set (10% of the data).  The price of the Lyft ride was forecasted by using the surge multiplier, distance, source location, and weather summary.  This model generated a multiple R-squared value of 0.845, which means it explains 84.5% of the variation in Lyft prices.  In addition, the correlation accuracy of this model is 0.92, which means that the predicted prices of Lyft rides are very similar to the actual prices since its value is close to 1.  This can be seen by examining the first few lines of data generated by this model in the table below.  
 
 ```{r, model, echo = FALSE, message = FALSE, warning = FALSE, results = 'hide'}
 
@@ -208,7 +206,7 @@ summary(lyft_model)
 ## use the linear regression model on the test set
 lyft_pred <- predict(lyft_model, lyft_test)
 
-## create a data frame to compare the predicted actual values
+## create a data frame to compare the predicted and the actual values
 actual_predicted <- data.frame(cbind(Actual = lyft_test$price, Predicted = lyft_pred))
 
 ## check the correlation accuracy between the predicted and the actual values
@@ -218,22 +216,22 @@ correlation_accuracy
 
 ```{r, table, echo = FALSE, message = FALSE, warning = FALSE}
 
-## check the first few rows of the predicted and actual values
+## check the first few rows of the predicted and the actual values
 kable(head(actual_predicted), 
       caption = "Comparing the Actual Prices to the Predicted Prices", digits = 1)
 ```
 
 ## Conclusion
 
-Price surging is a very common practice of rideshare companies.  It occurs when the demand for rides exceeds the number of cars available for service.  By using a dataset of Lyft rides for the city of Boston, several variables were found to impact the price of Lyft rides such as surge multipliers, weather conditions, and the location of where Lyft rides start.  A linear regression model that forecasts Lyft prices was built utilizing such variables and, as such, can predict Lyft prices with an accuracy of 0.92.  Although this accuracy is very acceptable since it is close to a value of 1, this model could still potentially be improved by collecting data over a longer timeframe, throughout several locations, and by including important events in each location such as sporting events, concerts, etc.
+Price surging is a very common practice of rideshare companies.  It occurs when the demand for rides exceeds the number of cars available for service.  By analyzing a dataset of Lyft rides for the city of Boston, several variables were found to impact price surging, such as weather conditions and a ride's starting location.  Using these findings plus the correlation of price and distance, we were able to build a linear regression model that forecasts Lyft prices with an accuracy of 0.92.  Although this accuracy is very acceptable since it is close to a value of 1, this model could still potentially be improved by collecting more data throughout several locations and by including important events in each location (sporting events, concerts, etc.) which may affect the need for Lyft rides.
 
 &nbsp;
 
 ## References
 
-"Lyft", *Lyft*, Lyft, Inc., 2019, lyft.com.
+"Lyft." *Lyft*, Lyft, Inc., 2019, lyft.com.
 
-Rumsey, Deborah. "How to Interpret a Correlation Coefficient r", *Dummies: A Wiley Brand*, John Wiley & Sons, Inc., 2019, dummies.com/education/math/statistics/how-to-interpret-a-correlation-coefficient-r.
+Rumsey, Deborah. "How to Interpret a Correlation Coefficient r." *Dummies: A Wiley Brand*, John Wiley & Sons, Inc., 2019, dummies.com/education/math/statistics/how-to-interpret-a-correlation-coefficient-r.
 
 &nbsp;
 
@@ -262,12 +260,12 @@ This data science project was completed with the use of the R code below.
 
 ## load libraries
 library(tidyverse)
-library(psych)
 library(ggcorrplot)
 library(knitr)
 
 ## assign the link for the lyft zip folder
-lyft_url <- "https://github.com/jessicapadilla/uber_and_lyft/blob/master/lyft.csv.zip?raw=true"
+lyft_url <- "https://github.com/jessicapadilla/lyft_fares/blob/master/
+lyft.csv.zip?raw=true"
 
 ## create a temporary file so the data can be downloaded into it
 lyft_temp <- tempfile()
@@ -315,22 +313,16 @@ lyft <- lyft %>% filter(car_type == "Lyft")
 ## condense the categories in the weather summary column
 lyft <- lyft %>% mutate(weather_summary = case_when(
   weather_summary == " Clear " ~ "Clear",
-  weather_summary %in% c(" Overcast ", " Mostly Cloudy ", " Partly Cloudy ", " Possible Drizzle ") ~ "Cloudy",
+  weather_summary %in% c(" Overcast ", " Mostly Cloudy ", " Partly Cloudy ", 
+                         " Possible Drizzle ") ~ "Cloudy",
   weather_summary %in% c(" Light Rain ", " Rain ", " Drizzle ") ~ "Rainy",
   weather_summary == " Foggy " ~ "Foggy"))
 
 ## reorder the types of weather conditions
 lyft$weather_summary <- factor(lyft$weather_summary,
-                                         levels = c("Cloudy", "Clear", "Rainy", "Foggy"))
-
-## reorder the weekdays
-lyft$weekday <- factor(lyft$weekday,
-                               levels = c("Sun", "Mon", "Tue",
-                                          "Wed", "Thu",
-                                          "Fri", "Sat"))
+                               levels = c("Cloudy", "Clear", "Rainy", "Foggy"))
 
 ## create a graph to show how frequent price surging occurs
-## exclude surge_multiplier of 1 since it doesn't cause fare to increase
 lyft %>% filter(surge_multiplier > 1) %>%
   ggplot(aes(surge_multiplier)) + 
   geom_histogram(binwidth = 0.25, col = "black", fill = "purple") +
@@ -354,10 +346,9 @@ lyft %>% filter(surge_multiplier > 1) %>%
   theme(legend.position = "none", 
         axis.text.x = element_text(angle = 90, hjust = 1))
 
-## create a graph to show how the surge_multiplier changes with weather
-## exclude surge_multiplier of 1 since it doesn't cause fare to increase
+## create a graph to show how the surge multiplier changes with weather
 lyft %>% filter(surge_multiplier > 1) %>% 
-  group_by(weather_summary) %>% count(surge_multiplier) %>%
+  group_by(surge_multiplier) %>% count(weather_summary) %>%
   ggplot(aes(surge_multiplier, n, col = purple)) + 
   geom_bar(stat = "identity", fill = "purple", color = "black") +
   facet_wrap(. ~ weather_summary) + 
@@ -409,13 +400,13 @@ summary(lyft_model)
 ## use the linear regression model on the test set
 lyft_pred <- predict(lyft_model, lyft_test)
 
-## create a data frame to compare the predicted actual values
-actual_predicted <- data.frame(cbind("Actual" = lyft_test$price, "Predicted" = lyft_pred))
+## create a data frame to compare the predicted and the actual values
+actual_predicted <- data.frame(cbind(Actual = lyft_test$price, Predicted = lyft_pred))
 
 ## check the correlation accuracy between the predicted and the actual values
 correlation_accuracy <- cor(actual_predicted)
 correlation_accuracy
 
-## check the first few rows of the predicted and actual values
+## check the first few rows of the predicted and the actual values
 kable(head(actual_predicted), 
       caption = "Comparing the Actual Prices to the Predicted Prices", digits = 1)

@@ -1,11 +1,10 @@
 ## load libraries
 library(tidyverse)
-library(psych)
 library(ggcorrplot)
 library(knitr)
 
 ## assign the link for the lyft zip folder
-lyft_url <- "https://github.com/jessicapadilla/uber_and_lyft/blob/master/lyft.csv.zip?raw=true"
+lyft_url <- "https://github.com/jessicapadilla/lyft_fares/blob/master/lyft.csv.zip?raw=true"
 
 ## create a temporary file so the data can be downloaded into it
 lyft_temp <- tempfile()
@@ -59,16 +58,9 @@ lyft <- lyft %>% mutate(weather_summary = case_when(
 
 ## reorder the types of weather conditions
 lyft$weather_summary <- factor(lyft$weather_summary,
-                                         levels = c("Cloudy", "Clear", "Rainy", "Foggy"))
-
-## reorder the weekdays
-lyft$weekday <- factor(lyft$weekday,
-                               levels = c("Sun", "Mon", "Tue",
-                                          "Wed", "Thu",
-                                          "Fri", "Sat"))
+                               levels = c("Cloudy", "Clear", "Rainy", "Foggy"))
 
 ## create a graph to show how frequent price surging occurs
-## exclude surge_multiplier of 1 since it doesn't cause fare to increase
 lyft %>% filter(surge_multiplier > 1) %>%
   ggplot(aes(surge_multiplier)) + 
   geom_histogram(binwidth = 0.25, col = "black", fill = "purple") +
@@ -92,10 +84,9 @@ lyft %>% filter(surge_multiplier > 1) %>%
   theme(legend.position = "none", 
         axis.text.x = element_text(angle = 90, hjust = 1))
 
-## create a graph to show how the surge_multiplier changes with weather
-## exclude surge_multiplier of 1 since it doesn't cause fare to increase
+## create a graph to show how the surge multiplier changes with weather
 lyft %>% filter(surge_multiplier > 1) %>% 
-  group_by(weather_summary) %>% count(surge_multiplier) %>%
+  group_by(surge_multiplier) %>% count(weather_summary) %>%
   ggplot(aes(surge_multiplier, n, col = purple)) + 
   geom_bar(stat = "identity", fill = "purple", color = "black") +
   facet_wrap(. ~ weather_summary) + 
@@ -147,13 +138,13 @@ summary(lyft_model)
 ## use the linear regression model on the test set
 lyft_pred <- predict(lyft_model, lyft_test)
 
-## create a data frame to compare the predicted actual values
-actual_predicted <- data.frame(cbind("Actual" = lyft_test$price, "Predicted" = lyft_pred))
+## create a data frame to compare the predicted and the actual values
+actual_predicted <- data.frame(cbind(Actual = lyft_test$price, Predicted = lyft_pred))
 
 ## check the correlation accuracy between the predicted and the actual values
 correlation_accuracy <- cor(actual_predicted)
 correlation_accuracy
 
-## check the first few rows of the predicted and actual values
+## check the first few rows of the predicted and the actual values
 kable(head(actual_predicted), 
       caption = "Comparing the Actual Prices to the Predicted Prices", digits = 1)
