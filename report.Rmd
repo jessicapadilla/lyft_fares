@@ -7,7 +7,7 @@ output: pdf_document
 
 ## Introduction
 
-Lyft is one of the many rideshare services available to people today.  Founded in 2012, Lyft allows users to order rides through the use of a phone app.  There are 6 types of rides available: Shared Ride, Lyft, Lyft XL, Lux, Lux Black, and Lux Black XL (Lyft).  This project will focus on the the basic Lyft service, which is the most commonly used ride.  
+Lyft is one of the many rideshare services available to people today.  Founded in 2012, Lyft allows users to order rides through the use of a phone app.  There are 6 types of rides available: Shared Ride, Lyft, Lyft XL, Lux, Lux Black, and Lux Black XL (Lyft).  This project will focus on the basic Lyft service, which is the most commonly used ride.  
 
 Fares are generally determined by the distance for each ride.  However, Lyft and other rideshare companies have adopted the practice of what is called price surging.  This involves increasing the price of a ride because the demand for Lyft cars exceeds the number of Lyft cars that are actually in service (Lyft).  This can result from many conditions such as densely populated locations, bad weather, and busy commute hours within the day.  In this project, we will utilize a data set of Lyft rides within Boston, Massachusetts to see what factors contribute to price surges.  We will, then, use the determined factors to forecast the price of any Lyft ride.
 &nbsp;
